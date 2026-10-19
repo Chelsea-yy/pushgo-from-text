@@ -1,4 +1,4 @@
-name: Local Excel MCP checks
+name: Local product and Excel checks
 
 on:
   push:
@@ -15,7 +15,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v6
         with:
           version: '0.11.3'
@@ -24,3 +24,23 @@ jobs:
         run: uvx ruff==0.14.0 check scripts tests
       - name: Run synthetic MCP tests without private inputs
         run: uv run --python 3.12 --with excel-mcp-server==2.2.1 python -m unittest discover -s tests -v
+      - name: Run source parser synthetic checks without private inputs
+        run: uv run --python 3.12 --with pypdf==6.16.1 --with python-docx==1.1.2 python scripts/analyze_private_sources.py --self-test
+
+  product:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22', '24']
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - name: Block high and critical dependency advisories
+        run: npm audit --omit=dev --audit-level=high

@@ -8,6 +8,7 @@
 
 # Private research inputs and locally generated reports
 .local/
+raw_data/
 private/
 excel_files/
 *.xlsx
