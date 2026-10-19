@@ -7,6 +7,7 @@
   "engines": { "node": ">=22.3.0" },
   "scripts": {
     "pushgo": "tsx src/cli/index.ts",
+    "skill:install": "node scripts/install_writer_skill.mjs",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
