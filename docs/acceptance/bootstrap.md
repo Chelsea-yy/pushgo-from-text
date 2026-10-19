@@ -19,8 +19,8 @@
 | 本地代码检查 | 通过 | `ruff check scripts tests` 通过；3 项 unittest 测试通过，含真实本地 MCP 与虚构工作簿的集成验证。 |
 | GitHub 初始基准 | 通过 | 经用户单独授权，已推送不含文件的 `main` 初始提交；开发成果保留在独立分支。 |
 | GitHub API 认证 | 通过 | 本机现有 Git Credential Manager 认证可用于 Git 推送及 GitHub API。临时凭据仅用于授权操作，不保存到文件或日志。 |
-| 开发分支与 PR | 待本阶段最终同步 | 按用户授权，主控验收后推送开发分支并创建 PR；main 合并保持等待用户确认。 |
-| 远端自动检查 | 待运行 | 已配置 Windows 虚构样例测试及 lint，最终状态以 GitHub 实际运行结果为准。 |
+| 开发分支与 PR | 已同步，等待用户审核 | 分支 `chore/research-tooling-bootstrap` 已推送；[PR #1](https://github.com/Chelsea-yy/pushgo-from-text/pull/1) 已创建，未合入 `main`。 |
+| 远端自动检查 | 首轮通过 | [Windows CI 首轮运行](https://github.com/Chelsea-yy/pushgo-from-text/actions/runs/39256680037) 已成功完成；后续提交仍以 PR 当前检查结果为准。 |
 
 ## 可复现命令
 
