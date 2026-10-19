@@ -68,6 +68,28 @@ npm run pushgo -- draft --input "raw_data/你的策划案.docx" --out ".local/mo
 
 模型仅根据提供材料改写，当前不提供联网补充或事实真伪判断。自动检查无法证明语义正确，特别是“拟邀/确认”“计划/已发生”的区别，仍需逐段人工审阅。当前模型适配器通过本地模拟接口测试，尚未使用真实付费模型验收。
 
+## 策划案转推送文稿 Skill
+
+写作入口为 [campus-push-writer](skills/campus-push-writer/SKILL.md)，与原有导出排版 Skill 分开。它让当前 Agent 读材料、拆解参考、选择读者主线、写三个标题、审稿并定向修订，不要求另配 API 密钥，也不自动调用付费模型。
+
+已整理 [模块内容与选材](skills/campus-push-writer/references/modules.md)、[审稿规约](skills/campus-push-writer/references/evaluation.md) 和 [完整虚构示范](skills/campus-push-writer/references/fictional-example.md)。每个模块说明读者问题、应写内容、来源选择与常见错误。参考研究覆盖5篇预告、4篇回顾；当前没有可核实的阅读/转发数字，不能声称已经学习到高传播规律。
+
+将公开 Skill 复制到候选的 Cursor 项目级目录：
+
+```powershell
+npm run skill:install
+```
+
+安装只复制公开 Markdown 到 `.cursor/skills/campus-push-writer/`，不改用户级配置，不复制真实材料；目标已存在就停止，不覆盖本地改动。**本轮未成功读取 Cursor 官方 Skills 文档，也未验证当前客户端的自动发现与重载行为**，所以复制成功仅表示文件就位。可在 Skills 列表自行检查发现状态；当前可靠的使用方式是明确要求 Agent 读取源 `SKILL.md`，不依赖自动发现。仓库 `AGENTS.md` 另提供入口指引，但本轮也未独立验收其自动加载。
+
+可以这样要求当前 Agent：
+
+> 使用 campus-push-writer，把我指定的本地策划案写成活动预告。先核对事实和公开范围，参照已有文稿分析模块，写三个标题，完成审稿与定向修改。正文、标题选项、出处审核和修订记录分开保存到 .local/ 下。历史活动只作练习。
+
+交付 `article.md`、`title-options.md`、`editor-review.md` 和 `revision-log.md`。至少经过首稿、审稿、修订；最多三轮，连续两轮无改善时报告阻塞。内部评分是编辑判断，不是模型训练、阅读量或用户验收。缺少报名资产、公开确认或有效日期时，文稿可审阅但不能自动发布。
+
+**安装 Skill 不改变 CLI 默认离线模式。** 独立命令仍先提取模板；模型适配器不会自动加载这个 Skill，也不会自动完成多轮审稿。`render` 需要 Draft JSON，不能直接读取写作 Skill 的 Markdown。当前阶段的实际检查见 [写作 Skill 验收](docs/acceptance/writing-skill.md)。
+
 ## 主题、修改与导出
 
 | 主题 | 用途 |
@@ -123,7 +145,7 @@ uv run --with excel-mcp-server==2.2.1 python -m unittest discover -s tests -v
 ## 后续路线与关键阻塞
 
 1. 在用户登录的秀米中，用虚构样例完成导入、逐项编辑、保存和重开；决定最终交付路径。该环节是当前最关键的外部验收阻塞。
-2. 使用经授权的真实材料与指定模型核对生成质量，改善长策划案结构与冲突提取。
+2. 用当前写作 Skill 和真实材料继续收集用户编辑反馈；取得可比阅读/分享证据后再验证传播假设。独立 CLI 的真实模型调用及多轮写作接入仍需单独授权与验收。
 3. 完善图片/二维码资产管理和持久化预览编辑；确认许可证后建立可复用的开源发布方式。
 4. 在核心与平台导入稳定后接轻量网页，小程序后置。当前没有网页部署或自动发布能力。
 
