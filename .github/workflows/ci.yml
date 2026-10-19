@@ -1,0 +1,26 @@
+name: Local Excel MCP checks
+
+on:
+  push:
+    branches-ignore:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-acceptance:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.11.3'
+          enable-cache: false
+      - name: Check Python lint
+        run: uvx ruff==0.14.0 check scripts tests
+      - name: Run synthetic MCP tests without private inputs
+        run: uv run --python 3.12 --with excel-mcp-server==2.2.1 python -m unittest discover -s tests -v

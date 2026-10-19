@@ -1,0 +1,34 @@
+# Local credentials and editor configuration
+.env
+.env.*
+!.env.example
+.cursor/
+*.pem
+*.key
+
+# Private research inputs and locally generated reports
+.local/
+private/
+excel_files/
+*.xlsx
+*.xlsm
+*.xls
+*.docx
+*.doc
+*.pdf
+*.pptx
+*.csv
+*.log
+*.bak
+
+# Development output
+node_modules/
+dist/
+coverage/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+Thumbs.db
