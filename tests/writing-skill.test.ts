@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, readdir, rm, writeFile, mkdir, symlink } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, realpath, rm, writeFile, mkdir, symlink } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -36,7 +36,8 @@ test('writer installer copies exact public package and refuses to overwrite loca
   const temporary = await mkdtemp(path.join(os.tmpdir(), 'pushgo-skill-'));
   try {
     const destination = await installWritingSkill(temporary);
-    assert.equal(destination, path.join(temporary, '.cursor', 'skills', 'campus-push-writer'));
+    // Windows runners may expose TEMP via an 8.3 alias; the installer intentionally returns a canonical path.
+    assert.equal(destination, path.join(await realpath(temporary), '.cursor', 'skills', 'campus-push-writer'));
     const originals = await markdownFiles(skillSource);
     const installed = await markdownFiles(destination);
     assert.equal(installed.length, originals.length);
