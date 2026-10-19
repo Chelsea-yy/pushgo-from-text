@@ -24,7 +24,7 @@
 | 真实模型文案质量 | 未测 | 无真实付费调用；当前仅本地模拟服务验证请求、结构、来源、超时、重定向及错误处理 |
 | Git 隐私隔离 | 通过本地检查 | `raw_data`、`.local` 均被忽略；公开脚本移除真实姓名，来源和原文不入库 |
 | 依赖审计 | 有已知中等级风险 | 3 条记录来自同一 Mammoth CLI 传递链，没有高危/严重记录；当前库 API 不走该 CLI 路径，但不是已修复，见安全文档 |
-| GitHub 同步与 CI | 待本次提交后更新 | 在功能分支同步，PR 不合并 `main`；远端结果以对应提交检查为准 |
+| GitHub 同步与 CI | 通过首个产品提交，PR 待审核 | `feat/editable-push-mvp` 的产品提交 `f2b18d3` 已同步；[草稿 PR #2](https://github.com/Chelsea-yy/pushgo-from-text/pull/2) 基于尚未合并的 PR #1 分支，不合并 `main`；[PR 检查运行](https://github.com/Chelsea-yy/pushgo-from-text/actions/runs/39265122740) 的 Windows Node 22/24 与 Python 检查全部通过。后续文档提交以最新检查为准。 |
 
 ## 独立复核与返工
 
