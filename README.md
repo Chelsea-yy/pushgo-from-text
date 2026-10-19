@@ -1,47 +1,139 @@
-# pushgo-from-text
+# PushGo · 从材料到活动推送
 
-面向高校社团与学生组织的活动预告／招新图文工具，计划将简短描述或策划案转为事实可核对、风格可控制、可在目标平台继续编辑的推送。
+面向高校社团与学生组织，把简短描述或本地策划案整理成**有来源、可审阅、可换主题的推送草稿**。核心工具、命令行和 Agent Skill 共用一套逻辑，后续再接网页界面，小程序后置。
 
-**当前处于接入验证与研究阶段，尚无可用的文章生成产品。** 秀米原生组件导入仍待官方确认，本文不承诺已经支持导入、发布或任意账号接入。
+当前提供本地可运行的第一版工具。支持文本、Markdown、DOCX 和文字型 PDF，提供三套主题，并导出可编辑 HTML、Word、Markdown 和带来源的 JSON。
 
-## 当前已有内容
+**秀米导入尚未通过真实平台验收。** 验收目标是导入后能继续修改文本和图片，不要求必须使用秀米原生组件；整篇截图不符合要求。富文本复制和 Word 是待测候选，不能当作已支持秀米/微信的承诺。平台教程、观察和验收步骤分别见 [导入研究](docs/research/xiumi-editable-import.md) 与 [平台验收](docs/acceptance/xiumi-editable.md)。
 
-- 本地 Excel MCP 只读接入说明及可复现验收脚本。
-- 三项自动测试：虚构工作簿 MCP 集成验证及两种 SDK 字段命名兼容测试。
-- 匿名样例研究、秀米官方公开证据、尚未发送的咨询文本与真实平台验收规约。
-- 开发分支、主控验收和 PR 审核规范。
+## 为什么采用“核心 + CLI + Skill”
 
-## 验证工具
+- **核心模块**负责提取、事实引用、校验和渲染，容易测试，也能被未来网页服务复用。
+- **CLI（命令行工具）**使没有特定 Agent 平台的用户也能重复运行完整流程。
+- **Agent Skill**负责收集需求、追问缺失信息和人工确认，不把关键能力锁在提示词里。入口为 [SKILL.md](skills/campus-push/SKILL.md)。
 
-无需 Microsoft Excel。安装 [uv](https://docs.astral.sh/uv/) 后，在项目目录运行：
+项目尚未选择开源许可证，目前可公开审阅代码，不宣称已经按某项开源许可证授权。`private: true` 用于防止误发布到 npm。
+
+## 快速开始
+
+需要 Node.js 22.3 或以上，推荐 Node.js 24。Windows 为当前本地验证环境，GitHub 自动测试覆盖 Node.js 22 和 24。
+
+```powershell
+npm ci
+npm run check
+npm run pushgo -- draft --input "examples/campus-reading.md" --out ".local/demo-campus" --theme campus --style "简洁,温暖"
+```
+
+示例全部虚构。先阅读 `.local/demo-campus/review.md`，然后用浏览器打开 `preview.html`。输出目录必须不存在，工具不会覆盖已有目录。
+
+处理自己的策划案：
+
+```powershell
+npm run pushgo -- draft --input "raw_data/你的策划案.docx" --out ".local/my-first-draft" --theme formal
+```
+
+输入支持 `.txt`、`.md`、`.docx`、`.pdf`，上限 20 MB、150000 个提取字符，PDF 上限 100 页。扫描件不做 OCR；复杂表格、图片、文本框、修订、二维码需要人工核对。材料只读，输出不能放在 `raw_data` 中。
+
+简短文字也可使用 `--text "活动名称：校园交流会"` 替代 `--input`。查看提取及来源定位：
+
+```powershell
+npm run pushgo -- inspect --input "raw_data/你的策划案.pdf"
+```
+
+`inspect` 会把原文写到终端标准输出，请注意隐私，避免把输出上传到公开日志。
+
+## 生成模式与事实补充
+
+### 离线模式（默认）
+
+按显式字段和少量日期/时间规则摘录事实，保留原文段落与出处，生成待审核模板。它**不是 AI 润色成稿**，不会联网搜索、自动补造信息，也不会读取模型密钥后自行调用。长策划案可能产生较长的原文整理稿，需人工删改。
+
+原文没有的时间、场地、费用、嘉宾等会保持缺失或待定。存在多个候选时提示冲突，保留原文供人确认。补充信息时，请把有依据的内容加入本地材料，再重新运行；不能靠删除提示来消除事实冲突。
+
+### 模型辅助（显式选择）
+
+支持兼容 OpenAI Chat Completions 的接口，不绑定某个厂商或模型。需要在本机安全设置：
+
+- `OPENAI_API_KEY`：自己的密钥，避免写入命令历史、聊天或仓库。
+- `OPENAI_MODEL`：明确选择模型，工具不默认选择付费模型。
+- `OPENAI_BASE_URL`：可选，默认 `https://api.openai.com/v1`。自定义接口需要支持 JSON 输出；材料和密钥会发送到该地址，请自行确认可信性。
+
+确认允许上传该材料、接受可能费用后，显式运行：
+
+```powershell
+npm run pushgo -- draft --input "raw_data/你的策划案.docx" --out ".local/model-draft" --provider openai --theme campus --style "清新,简洁"
+```
+
+每次只请求一次，不自动重试、不隐藏降级。接口必须为 HTTPS（本机测试接口可用 loopback HTTP），不跟随重定向。输入超过 40000 个序列化字符会拒绝，不静默截断。返回结果需符合结构、引用真实来源，关键字面信息无出处会拒绝导出。
+
+模型仅根据提供材料改写，当前不提供联网补充或事实真伪判断。自动检查无法证明语义正确，特别是“拟邀/确认”“计划/已发生”的区别，仍需逐段人工审阅。当前模型适配器通过本地模拟接口测试，尚未使用真实付费模型验收。
+
+## 主题、修改与导出
+
+| 主题 | 用途 |
+| --- | --- |
+| `campus` | 绿系、校园清新 |
+| `formal` | 蓝系、正式简洁 |
+| `vibrant` | 暖色、明亮活力 |
+
+`--style` 支持逗号分隔的风格词。离线模式仅记录这些词，模型模式才用它们控制表达；视觉配色与排版由 `--theme` 控制。
+
+每次输出六个文件：
+
+| 文件 | 用途 |
+| --- | --- |
+| `article.json` | 带原文、事实、引用与问题的可长期编辑草稿 |
+| `article.html` | 无脚本、内联样式富文本片段 |
+| `preview.html` | 可临时编辑并复制当前正文的本地预览 |
+| `article.md` | 方便审阅、再编辑的 Markdown |
+| `article.docx` | 可编辑文字段落和列表；图片为人工插入占位 |
+| `review.md` | 事实出处、缺失/冲突和人工检查清单 |
+
+修改 `article.json` 的标题、摘要和正文，再运行以下命令更换主题，无需重新调用模型：
+
+```powershell
+npm run pushgo -- render --draft ".local/demo-campus/article.json" --out ".local/demo-formal" --theme formal
+```
+
+`render` 会重新校验，不会自动把草稿标成审核通过。保留真实来源编号；新增事实需先补来源。离线草稿允许导出带错误提示的审阅候选，因此生成成功不代表可发布。
+
+`preview.html` 可直接修改正文，复制按钮会复制当前编辑内容的富文本和纯文本，操作区不会混入正文。浏览器不允许剪贴板时会选中正文，按 Ctrl+C 手动复制。**预览修改不会回写 JSON，刷新会丢失，也不会更新其他导出文件。** 长期修改应改 JSON 后重新渲染。
+
+图片和二维码需在目标平台重新上传/替换。工具不自动抓图、上传或发布，不保证外链/本地图片粘贴后可用。
+
+## 验证与工程说明
+
+```powershell
+npm run check
+npm audit --omit=dev
+```
+
+测试使用虚构文本、合成 DOCX/PDF 和本地模拟模型服务，不需要真实材料、密钥或秀米账号。覆盖来源校验、缺失/冲突、CLI 全流程、三主题、富文本注入过滤、剪贴板失败分支与 Word 可编辑结构。Windows GitHub Actions 额外验证 Node.js 22/24。
+
+已知依赖风险：`mammoth → argparse → sprintf-js` 存在中等级拒绝服务通告，当前 registry 未提供修复版。本项目仅调用 Mammoth 的文档文字提取 API，不调用其命令行格式化参数路径；仍不能宣称无风险。详见 [依赖与隐私边界](docs/security-and-privacy.md)。CI 阻断高危/严重通告，中等级风险仍记录为待处理。
+
+可选 Excel MCP 验证工具无需安装 Microsoft Excel，使用 [uv](https://docs.astral.sh/uv/) 运行：
 
 ```powershell
 uv run --with excel-mcp-server==2.2.1 python -m unittest discover -s tests -v
 ```
 
-测试仅创建临时虚构工作簿，不需要真实策划案、模型密钥或秀米账号。首次运行需要下载依赖。它验证本地 MCP 服务，而不是秀米平台或 AI 生成能力。
+只验证本地只读 MCP 和虚构工作簿，不代表 Cursor 工具桥或秀米已打通。配置说明见 [Excel MCP](docs/setup/excel-mcp.md)。
 
-读取你自己的表格前，请阅读 [Excel MCP 配置与安全说明](docs/setup/excel-mcp.md)。包含真实内容的报告保存到被 Git 忽略的 `.local/`，不应公开上传。
+## 后续路线与关键阻塞
 
-## 文档
+1. 在用户登录的秀米中，用虚构样例完成导入、逐项编辑、保存和重开；决定最终交付路径。该环节是当前最关键的外部验收阻塞。
+2. 使用经授权的真实材料与指定模型核对生成质量，改善长策划案结构与冲突提取。
+3. 完善图片/二维码资产管理和持久化预览编辑；确认许可证后建立可复用的开源发布方式。
+4. 在核心与平台导入稳定后接轻量网页，小程序后置。当前没有网页部署或自动发布能力。
 
-- [阶段验收记录](docs/acceptance/bootstrap.md)
-- [样例观察与限制](docs/research/sample-analysis.md)
-- [秀米能力研究与官方咨询文本](docs/research/xiumi-native-import.md)
-- [秀米最小真实验收规范](docs/acceptance/xiumi-native.md)
+## 研究、验收与协作
+
+- [第一阶段接入记录](docs/acceptance/bootstrap.md)（历史记录）
+- [本地工具阶段验收](docs/acceptance/editable-mvp.md)
+- [原始方案与成稿匿名比较](docs/research/source-comparison.md)
+- [参考文章观察](docs/research/sample-analysis.md)
+- [旧版原生接口研究](docs/research/xiumi-native-import.md)（历史路线，已不作为开发前置门槛）
 - [协作、隐私与 GitHub 同步](docs/contributing.md)
 
-## 后续路线与前置条件
-
-1. 确认官方允许的秀米原生写入路径、使用条件及开源分发授权。
-2. 完成独立组件编辑、修改、保存及重新打开的真实最小测试。
-3. 通过上述验收并确认后，再建设文档提取、文案生成、三套校园主题、命令行与 Agent Skill。
-4. 核心流程稳定后扩展网页，小程序后置。
-
-普通 HTML 粘贴、整篇图片、本地渲染、向外同步 HTML 和打开秀米编辑页均不能替代原生组件验收。
-
-## 材料与许可
-
-真实表格、策划案、参考文章全文、图片、二维码、凭据和本机配置默认不入库。用户认可参考案例质量不等于允许公开转载。
-
-项目开源许可证尚待维护者选择；当前不宣称已按某项开源许可证授权。第三方依赖与秀米平台的许可分别确认。
+真实策划案、Excel、原文、图片、二维码、凭据、本机配置和生成结果默认只留在 `raw_data/`、`.local/` 等被忽略目录。用户认可参考案例质量不等于允许公开转载。GitHub 仅同步经审查的代码、虚构示例和匿名结论；功能分支与 PR 可以更新，合并 `main` 仍需维护者确认。
